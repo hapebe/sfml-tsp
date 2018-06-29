@@ -1,5 +1,5 @@
-int wWidth = 750;
-int wHeight = 750;
+#ifndef TSP_GLOBAL
+#define TSP_GLOBAL 1
 
 int currentMouseX = -1;
 int currentMouseY = -1;
@@ -26,3 +26,19 @@ double randomDouble(void) {
     return (double)rand() / max;
 }
 
+/**
+ * sets a new currentRoute and appends the old one (if exists!) to the route history.
+ */
+void setCurrentRoute(TSPRoute * r) {
+    if (r == NULL) {
+        throw runtime_error("Refusing to set currentRoute to NULL!"); exit(1);
+    }
+    if (currentRoute != NULL) {
+        routeHistory.push_bash(currentRoute);
+    }
+    currentRoute = r;
+
+    painter->updateRoute(currentRoute);
+}
+
+#endif

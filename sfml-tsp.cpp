@@ -1,12 +1,22 @@
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include <cstdlib> // for rand() and srand()
 #include <cmath> // for sqrt()
 #include <SFML/Graphics.hpp>
-#include "sfml-tsp-global.cpp"
-#include "sfml-tsp-model.cpp"
-#include "sfml-tsp-analyses.cpp"
-#include "sfml-tsp-gfx.cpp"
+#include "sfml-tsp-global.hpp"
+#include "sfml-tsp-model.hpp"
+#include "sfml-tsp-analyses.hpp"
+#include "sfml-tsp-gfx.hpp"
+
+/////////////////////////////////////////////////////////////////////////////
+//                                                                         //
+// GLOBAL VARIABLES:                                                       //
+//                                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+TSPPainter * painter;
+
 
 void setRandomRoute(void) {
     TSPRoute * r = TSPRouter::naiveRandom();
@@ -15,10 +25,8 @@ void setRandomRoute(void) {
     if (currentRoute == NULL || (r->getLength() < currentRoute->getLength())) {
         if (currentRoute != NULL) delete currentRoute;
 
-        currentRoute = r;
-        // cout << "Current Route is " << (currentRoute->isComplete()?"complete":"not complete") << "." << endl;
-        cout << "Route length: " << currentRoute->getLength() << "." << endl;
-        painter->updateRoute(currentRoute);
+        setCurrentRoute(r);
+        cout << "Accepting new rnd. route bec. length " << currentRoute->getLength() << "." << endl;
     } else {
         cout << "Not accepting new route because of length " << r->getLength() << "." << endl;
     }
@@ -35,13 +43,11 @@ void init(void) {
     createRoutingTable();
     cout << routingTable->debug();
 
-    // currentRoute = TSPRouter::naiveOrdered();
-    currentRoute = TSPRouter::naiveClosest();
+    // setCurrentRoute(TSPRouter::naiveOrdered());
+    setCurrentRoute(TSPRouter::naiveClosest());
+//    setRandomRoute();
     cout << "Current Route is " << (currentRoute->isComplete()?"complete":"not complete") << "." << endl;
     cout << "Route length: " << currentRoute->getLength() << "." << endl;
-    painter->updateRoute(currentRoute);
-//    setRandomRoute();
-
 }
 
 void destroy(void) {
@@ -51,23 +57,17 @@ void destroy(void) {
 }
 
 int main() {
-    sf::Vector2<double> a(1.0, 3.0);
-    sf::Vector2<double> b(5.0, 3.0);
-    sf::Vector2<double> c(2.0, 1.0);
-    sf::Vector2<double> d(2.0, 4.0);
-    LinearEquation le(a, b, c, d);
-    cout << boolalpha << le.isSolvable() << endl;
-    if (le.isSolvable()) {
-        cout << le.getX() << ";" << le.getY() << endl;
-        // cout << le.getIntersection().x << ";" << le.getIntersection().y << endl;
-    }
-
-    exit(1);
+    // LinearEquation::testCase1(); exit(1);
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
 
-    sf::RenderWindow window(sf::VideoMode(wWidth, wHeight), "Travelling Salesman Problem using SFML", sf::Style::Default, settings);
+    sf::RenderWindow window(
+        sf::VideoMode(CANVAS_W, CANVAS_H),
+        "Travelling Salesman Problem using SFML",
+        sf::Style::Default,
+        settings
+    );
 
     // sf::CircleShape circle1(100.f);
     // circle1.setFillColor(sf::Color::Red);
@@ -86,10 +86,9 @@ int main() {
         while (window.pollEvent(event)) {
             switch (event.type) {
                 case sf::Event::Resized:
-                    wWidth = event.size.width;
-                    wHeight = event.size.height;
                     std::cout << "new width: " << event.size.width << std::endl;
                     std::cout << "new height: " << event.size.height << std::endl;
+                    painter->setCanvas(0,0,event.size.width, event.size.height);
                     break;
 
                 // window closed
@@ -105,8 +104,18 @@ int main() {
                         setRandomRoute();
                     }
                     if (event.key.code == sf::Keyboard::O) {
-                        if (TSPRouteOptimizer::switchAnyTwoPoints(currentRoute)) {
-                            painter->updateRoute(currentRoute);
+                        // optimize the current route:
+                        TSPRoute * candidate = TSPRouteOptimizer::switchAnyTwoPoints(currentRoute);
+                        if (candidate != NULL) {
+                            setCurrentRoute(candidate);
+                        }
+                    }
+                    if (event.key.code == sf::Keyboard::B) {
+                        // one step back in the route history:
+                        if (routeHistory.size() > 0) {
+                            TSPRoute * candidate = routeHistory.back();
+                            routeHistory.pop_back();
+                            setCurrentRoute(candidate);
                         }
                     }
                     break;
@@ -122,8 +131,8 @@ int main() {
                     currentMouseX = event.mouseMove.x;
                     currentMouseY = event.mouseMove.y;
                     highlightedPoint = routingTable->findClosestPointIdx(
-                        screen2coordX(currentMouseX),
-                        screen2coordY(currentMouseY)
+                        painter->px2x(currentMouseX),
+                        painter->py2y(currentMouseY)
                     );
 //                    std::cout << "mouse (x;y): " << event.mouseMove.x << ";" << event.mouseMove.y << std::endl;
 //                    std::cout << "coord (x;y): " << screen2coordX(currentMouseX) << ";" << screen2coordY(currentMouseY) << std::endl;

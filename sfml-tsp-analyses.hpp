@@ -1,3 +1,6 @@
+#ifndef TSP_ANALYSES
+#define TSP_ANALYSES 1
+
 
 #include<iostream>
 using namespace std;
@@ -77,4 +80,19 @@ public:
 	sf::Vector2<double> getIntersection() {
         return sf::Vector2<double>(getX(), getY());
 	}
+
+	static void testCase1(void) {
+        sf::Vector2<double> a(1.0, 3.0);
+        sf::Vector2<double> b(5.0, 3.0);
+        sf::Vector2<double> c(2.0, 1.0);
+        sf::Vector2<double> d(2.0, 4.0);
+        LinearEquation le(a, b, c, d);
+        cout << boolalpha << le.isSolvable() << endl;
+        if (le.isSolvable()) {
+            cout << le.getX() << ";" << le.getY() << endl;
+            // cout << le.getIntersection().x << ";" << le.getIntersection().y << endl;
+        }
+	}
 };
+
+#endif

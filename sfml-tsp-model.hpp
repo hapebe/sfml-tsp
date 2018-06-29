@@ -1,6 +1,7 @@
+#ifndef TSP_MODEL
+#define TSP_MODEL 1
+
 #define TSP_N 101 // Number of desired points in the TSP model
-#include <sstream>
-#include <vector>
 using namespace std;
 
 class TSPPoint;
@@ -16,6 +17,7 @@ class TSPRoute;
 vector<TSPPoint> points(TSP_N);
 TSPRoutingTable * routingTable;
 TSPRoute * currentRoute;
+vector<TSPRoute *> routeHistory;
 
 
 
@@ -101,6 +103,7 @@ class TSPRoute {
         vector<int> seq;
     public:
         TSPRoute() { this->length = -1; }
+        TSPRoute * clone(void);
         void addStep(int idx) { seq.push_back(idx); }
         int getStep(int idx) { return seq[(idx + getSize()) % getSize()]; }
         void setStep(int idx, int point) {
@@ -111,6 +114,16 @@ class TSPRoute {
         int getSize(void) { return seq.size(); }
         double getLength(void);
 };
+
+TSPRoute * TSPRoute::clone(void) {
+    TSPRoute * retval = new TSPRoute();
+    for (int i=0; i<seq.size(); i++) {
+        retval->addStep(seq[i]);
+    }
+
+    return retval;
+}
+
 
 bool TSPRoute::isComplete() {
     static bool found[TSP_N];
@@ -207,8 +220,13 @@ class TSPRouter {
 };
 
 class TSPRouteOptimizer {
-public:
-static bool switchAnyTwoPoints(TSPRoute * r) {
+    public:
+        static TSPRoute * switchAnyTwoPoints(TSPRoute * r);
+};
+
+static TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original); {
+    TSPRoute * r = original->clone();
+
     double benchmark = r->getLength();
     int actualSwitchIdx = -1;
     double switchLength = benchmark;
@@ -245,15 +263,18 @@ static bool switchAnyTwoPoints(TSPRoute * r) {
         cout << "Found a shorter (" << r->getLength() << ") route in switchAnyTwoPoints: " << idxA << "<->" << idxB << endl;
 
         if (!r->isComplete()) {
-            throw new runtime_error("switchAnyTwoPoints() produced an incomplete route!");
+            throw new runtime_error("switchAnyTwoPoints() produced an incomplete route!"); exit(1);
         }
 
-        return true;
+        return r;
+    } else {
+        // free the unsuccessful temporary route:
+        delete r;
     }
 
-    return false;
+    return NULL;
 }
-};
+
 
 
 
@@ -296,3 +317,5 @@ void createRoutingTable() {
 }
 
 void deleteRoutingTable() { delete(routingTable); routingTable = NULL; }
+
+#endif
