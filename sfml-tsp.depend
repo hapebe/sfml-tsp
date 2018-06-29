@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1530183065 source:/home/user/Projekte/sfml-tsp/sfml-tsp.cpp
+	<iostream>
+	<sstream>
+	<cstdlib>
+	<cmath>
+	<SFML/Graphics.hpp>
+	"sfml-tsp-global.cpp"
+	"sfml-tsp-model.cpp"
+	"sfml-tsp-gfx.cpp"
+
+1530183065 /home/user/Projekte/sfml-tsp/sfml-tsp-global.cpp
+
+1530183850 /home/user/Projekte/sfml-tsp/sfml-tsp-model.cpp
+	<sstream>
+	<vector>
+
+1530183065 /home/user/Projekte/sfml-tsp/sfml-tsp-gfx.cpp
+
