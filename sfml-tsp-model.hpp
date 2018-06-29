@@ -309,9 +309,10 @@ void setCurrentRoute(TSPRoute * r) {
         throw runtime_error("Refusing to set currentRoute to NULL!"); exit(1);
     }
     if (currentRoute != NULL) {
-        if (routeHistory.back() != currentRoute) {
+        // TODO: only add the currentRoute if it (or an identical one) has not been added before
+        // if (routeHistory.back() != currentRoute) {
             routeHistory.push_back(currentRoute);
-        }
+        // }
     }
     currentRoute = r;
 

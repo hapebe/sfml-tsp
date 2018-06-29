@@ -40,8 +40,8 @@ void init(void) {
     cout << routingTable->debug();
 
     // setCurrentRoute(TSPRouter::naiveOrdered());
-    setCurrentRoute(TSPRouter::naiveClosest());
-//    setRandomRoute();
+    // setCurrentRoute(TSPRouter::naiveClosest());
+    setRandomRoute();
     cout << "Current Route is " << (currentRoute->isComplete()?"complete":"not complete") << "." << endl;
     cout << "Route length: " << currentRoute->getLength() << "." << endl;
 }
