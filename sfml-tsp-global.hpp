@@ -1,6 +1,23 @@
 #ifndef TSP_GLOBAL
 #define TSP_GLOBAL 1
 
+using namespace std;
+
+/////////////////////////////////////////////////////////////////////////////
+//                                                                         //
+// GLOBAL VARIABLES:                                                       //
+//                                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+vector<TSPPoint> points(TSP_N);
+TSPRoutingTable * routingTable;
+TSPRoute * currentRoute;
+vector<TSPRoute *> routeHistory;
+TSPPainter * painter;
+
+
+
+
 int currentMouseX = -1;
 int currentMouseY = -1;
 
@@ -24,21 +41,6 @@ const sf::Color getRandomColor(void) {
 double randomDouble(void) {
     long max = RAND_MAX;
     return (double)rand() / max;
-}
-
-/**
- * sets a new currentRoute and appends the old one (if exists!) to the route history.
- */
-void setCurrentRoute(TSPRoute * r) {
-    if (r == NULL) {
-        throw runtime_error("Refusing to set currentRoute to NULL!"); exit(1);
-    }
-    if (currentRoute != NULL) {
-        routeHistory.push_bash(currentRoute);
-    }
-    currentRoute = r;
-
-    painter->updateRoute(currentRoute);
 }
 
 #endif

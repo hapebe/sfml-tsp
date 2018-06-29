@@ -4,18 +4,14 @@
 #include <cstdlib> // for rand() and srand()
 #include <cmath> // for sqrt()
 #include <SFML/Graphics.hpp>
+
+#define TSP_N 101 // Number of desired points in the TSP model
+
+#include "sfml-tsp-class-declarations.hpp"
 #include "sfml-tsp-global.hpp"
 #include "sfml-tsp-model.hpp"
 #include "sfml-tsp-analyses.hpp"
 #include "sfml-tsp-gfx.hpp"
-
-/////////////////////////////////////////////////////////////////////////////
-//                                                                         //
-// GLOBAL VARIABLES:                                                       //
-//                                                                         //
-/////////////////////////////////////////////////////////////////////////////
-
-TSPPainter * painter;
 
 
 void setRandomRoute(void) {

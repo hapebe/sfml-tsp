@@ -1,24 +1,7 @@
 #ifndef TSP_MODEL
 #define TSP_MODEL 1
 
-#define TSP_N 101 // Number of desired points in the TSP model
 using namespace std;
-
-class TSPPoint;
-class TSPRoutingTable;
-class TSPRoute;
-
-/////////////////////////////////////////////////////////////////////////////
-//                                                                         //
-// GLOBAL VARIABLES:                                                       //
-//                                                                         //
-/////////////////////////////////////////////////////////////////////////////
-
-vector<TSPPoint> points(TSP_N);
-TSPRoutingTable * routingTable;
-TSPRoute * currentRoute;
-vector<TSPRoute *> routeHistory;
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -224,7 +207,7 @@ class TSPRouteOptimizer {
         static TSPRoute * switchAnyTwoPoints(TSPRoute * r);
 };
 
-static TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original); {
+TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
     TSPRoute * r = original->clone();
 
     double benchmark = r->getLength();
@@ -317,5 +300,23 @@ void createRoutingTable() {
 }
 
 void deleteRoutingTable() { delete(routingTable); routingTable = NULL; }
+
+/**
+ * sets a new currentRoute and appends the old one (if exists!) to the route history.
+ */
+void setCurrentRoute(TSPRoute * r) {
+    if (r == NULL) {
+        throw runtime_error("Refusing to set currentRoute to NULL!"); exit(1);
+    }
+    if (currentRoute != NULL) {
+        if (routeHistory.back() != currentRoute) {
+            routeHistory.push_back(currentRoute);
+        }
+    }
+    currentRoute = r;
+
+    painter->updateRoute(currentRoute);
+}
+
 
 #endif
