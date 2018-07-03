@@ -14,23 +14,10 @@
 #include "sfml-tsp-gfx.hpp"
 
 
-void setRandomRoute(void) {
-    TSPRoute * r = TSPRouter::naiveRandom();
-
-    // only if this one is better:
-    if (currentRoute == NULL || (r->getLength() < currentRoute->getLength())) {
-        if (currentRoute != NULL) delete currentRoute;
-
-        setCurrentRoute(r);
-        cout << "Accepting new rnd. route bec. length " << currentRoute->getLength() << "." << endl;
-    } else {
-        cout << "Not accepting new route because of length " << r->getLength() << "." << endl;
-    }
-}
-
 void init(void) {
     currentRoute = NULL;
     painter = new TSPPainter();
+    routeHistory = new TSPRouteHistory();
 
     // create and set up the application's data model:
     createPoints();
@@ -108,7 +95,7 @@ int main() {
                     }
                     if (event.key.code == sf::Keyboard::B) {
                         // one step back in the route history:
-						routeHistory.back();
+						routeHistory->back();
                     }
                     break;
 
@@ -126,24 +113,25 @@ int main() {
                         painter->px2x(currentMouseX),
                         painter->py2y(currentMouseY)
                     );
-//                    std::cout << "mouse (x;y): " << event.mouseMove.x << ";" << event.mouseMove.y << std::endl;
-//                    std::cout << "coord (x;y): " << screen2coordX(currentMouseX) << ";" << screen2coordY(currentMouseY) << std::endl;
-//                    if (highlightedPoint != -1) {
-//                        cout << "Point [" << highlightedPoint << "] is closest to the pointer..." << endl;
-//                    }
                     break;
 
                 case sf::Event::MouseButtonPressed:
                     if (event.mouseButton.button == sf::Mouse::Right) {
-                        std::cout << "the right button was pressed @ ";
-                        std::cout << event.mouseButton.x << ";" << event.mouseButton.y << std::endl;
+                    	int x = event.mouseButton.x;
+                    	int y = event.mouseButton.y;
+                    	cout << "the right button was pressed @(";
+                        cout << x << ";" << y << "); closest point #";
+                        int pointIdx = routingTable->findClosestPointIdx(painter->px2x(x), painter->py2y(y));
+                        cout << pointIdx << " at position ";
+                        cout << currentRoute->getIndexOf(pointIdx);
+                        cout << " of the route." << endl;
                     }
                     break;
 
                 // text entered
                 case sf::Event::TextEntered:
                     // if (event.text.unicode < 128)
-                    //    std::cout << "ASCII character typed: " << static_cast<char>(event.text.unicode) << std::endl;
+                    //    cout << "ASCII character typed: " << static_cast<char>(event.text.unicode) << std::endl;
                     break;
 
                 // we don't process other types of events

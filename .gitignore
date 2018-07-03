@@ -32,3 +32,6 @@ obj/**
 *.out
 *.app
 bin/**
+
+# specific files
+sfml-tsp.layout

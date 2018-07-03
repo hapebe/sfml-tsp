@@ -26,7 +26,7 @@ class TSPPoint {
         }
         double getDistanceTo(TSPPoint other) { return getDistanceTo(other.getX(), other.getY()); }
 
-    // allow the following funcation to access private elements:
+    // allow the following function to access private elements:
     friend ostream& operator<<(ostream& os, TSPPoint const& p);
 };
 
@@ -97,6 +97,7 @@ class TSPRoute {
         bool isComplete(void);
         size_t getSize(void) { return seq.size(); }
         double getLength(void);
+        int getIndexOf(int pointID);
 };
 
 TSPRoute * TSPRoute::clone(void) {
@@ -109,7 +110,8 @@ TSPRoute * TSPRoute::clone(void) {
 }
 
 bool TSPRoute::equals(TSPRoute * other) {
-    if (this->getSize() != other->getSize()) return false;
+    if (other == NULL) return false;
+	if (this->getSize() != other->getSize()) return false;
     for (size_t i=0; i<this->getSize(); i++) {
         if (this->seq[i] != other->seq[i]) return false;
     }
@@ -148,6 +150,15 @@ double TSPRoute::getLength() {
 
     return length;
 }
+
+int TSPRoute::getIndexOf(int pointID) {
+	for (size_t i=0; i<this->getSize(); i++) {
+		if (this->getStep(i) == pointID) return i;
+	}
+	// not found!
+	return -1;
+}
+
 
 class TSPRouter {
     public:
@@ -270,9 +281,9 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
 
 void TSPRouteHistory::add(TSPRoute* r) {
 	// do we already have this one?
-	for (size_t i=0; i<r->getSize(); i++) {
+	for (size_t i=0; i<this->data->size(); i++) {
 		TSPRoute * other = this->data->at(i);
-		if (other->equals(r)) return; // ignore...
+		if (r->equals(other)) return; // ignore...
 	}
 	data->push_back(r);
 }
@@ -281,6 +292,8 @@ void TSPRouteHistory::back(void) {
 	if (this->data->size() == 0) return;
 
 	TSPRoute * r = data->back();
+	if (r == NULL) return; // never set the current route to NULL
+
 	currentRoute = r;
     painter->updateRoute(currentRoute);
 
@@ -338,12 +351,28 @@ void setCurrentRoute(TSPRoute * r) {
         throw runtime_error("Refusing to set currentRoute to NULL!"); exit(1);
     }
     if (currentRoute != NULL) {
-        routeHistory.add(currentRoute);
+        routeHistory->add(currentRoute);
     }
     currentRoute = r;
 
     painter->updateRoute(currentRoute);
 }
 
+void setRandomRoute(void) {
+    TSPRoute * r = TSPRouter::naiveRandom();
+
+    if (currentRoute == NULL) {
+        setCurrentRoute(r);
+        return;
+    }
+
+    // only if this one is better:
+    if (r->getLength() < currentRoute->getLength()) {
+        cout << "Accepting new rnd. route bec. length " << r->getLength() << "." << endl;
+        setCurrentRoute(r);
+    } else {
+        cout << "Not accepting new route because of length " << r->getLength() << "." << endl;
+    }
+}
 
 #endif
