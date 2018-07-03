@@ -108,11 +108,7 @@ int main() {
                     }
                     if (event.key.code == sf::Keyboard::B) {
                         // one step back in the route history:
-                        if (routeHistory.size() > 0) {
-                            TSPRoute * candidate = routeHistory.back();
-                            routeHistory.pop_back();
-                            setCurrentRoute(candidate);
-                        }
+						routeHistory.back();
                     }
                     break;
 

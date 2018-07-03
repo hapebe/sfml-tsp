@@ -31,12 +31,11 @@ double TSPPainter::py2y(int y) {
 }
 
 void TSPPainter::updatePoints(vector<TSPPoint> data) {
-    // TODO: re-calculate the conversion variables coords logical <-> screen
     double minX = data[0].getX();
     double maxX = data[0].getX();
     double minY = data[0].getY();
     double maxY = data[0].getY();
-    for (int i=0; i<data.size(); i++) {
+    for (size_t i=0; i<data.size(); i++) {
         TSPPoint * p = &data[i];
         if (p->getX() < minX) minX = p->getX();
         if (p->getX() > maxX) maxX = p->getX();
@@ -69,8 +68,8 @@ void TSPPainter::updatePoints(vector<TSPPoint> data) {
     }
 }
 
-void TSPPainter::paintPoints(sf::RenderWindow * window, int highlight) {
-    for(int i=0; i<dots.size(); i++) {
+void TSPPainter::paintPoints(sf::RenderWindow * window, size_t highlight) {
+    for(size_t i=0; i<dots.size(); i++) {
         if (i==highlight) {
             dots[i].setRadius(20);
             dots[i].move(-15,-15);
@@ -86,7 +85,7 @@ void TSPPainter::paintPoints(sf::RenderWindow * window, int highlight) {
 }
 
 void TSPPainter::updateRoute(TSPRoute * r) {
-    for (int i=0; i<r->getSize(); i++) {
+    for (size_t i=0; i<r->getSize(); i++) {
         int idx = r->getStep(i);
         int x = this->x2px(points[idx].getX());
         int y = this->y2py(points[idx].getY());
