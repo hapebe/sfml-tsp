@@ -46,8 +46,8 @@ class TSPRoutingTable {
                 exit(1);
             }
             n = points.size();
-            for (int i=0; i<points.size(); i++) {
-                for (int j=i+1; j<points.size(); j++) {
+            for (size_t i=0; i<points.size(); i++) {
+                for (size_t j=i+1; j<points.size(); j++) {
                     distances[i][j] = points[i].getDistanceTo(points[j]);
                 }
             }
@@ -68,7 +68,7 @@ class TSPRoutingTable {
             double minIdx = -1;
 
             // iterate all points, remember the one with the least distance to x;y
-            for (int i=0; i<points.size(); i++) {
+            for (size_t i=0; i<points.size(); i++) {
                 double d = points[i].getDistanceTo(x,y);
                 if (d < minD) {
                     minD = d;
@@ -87,6 +87,7 @@ class TSPRoute {
     public:
         TSPRoute() { this->length = -1; }
         TSPRoute * clone(void);
+        bool equals(TSPRoute * other);
         void addStep(int idx) { seq.push_back(idx); }
         int getStep(int idx) { return seq[(idx + getSize()) % getSize()]; }
         void setStep(int idx, int point) {
@@ -94,27 +95,36 @@ class TSPRoute {
             length = -1; // length has to be recalculated
         }
         bool isComplete(void);
-        int getSize(void) { return seq.size(); }
+        size_t getSize(void) { return seq.size(); }
         double getLength(void);
 };
 
 TSPRoute * TSPRoute::clone(void) {
     TSPRoute * retval = new TSPRoute();
-    for (int i=0; i<seq.size(); i++) {
+    for (size_t i=0; i<seq.size(); i++) {
         retval->addStep(seq[i]);
     }
 
     return retval;
 }
 
+bool TSPRoute::equals(TSPRoute * other) {
+    if (this->getSize() != other->getSize()) return false;
+    for (size_t i=0; i<this->getSize(); i++) {
+        if (this->seq[i] != other->seq[i]) return false;
+    }
+    // same size, all points are the same:
+    return true;
+}
+
 
 bool TSPRoute::isComplete() {
     static bool found[TSP_N];
-    for (int i=0; i<TSP_N; i++) found[i] = false;
-    for (int i=0; i<seq.size(); i++) {
+    for (size_t i=0; i<TSP_N; i++) found[i] = false;
+    for (size_t i=0; i<seq.size(); i++) {
         found[seq[i]] = true;
     }
-    for (int i=0; i<TSP_N; i++) {
+    for (size_t i=0; i<TSP_N; i++) {
         if (!found[i]) return false;
     }
     return true;
@@ -124,7 +134,7 @@ double TSPRoute::getLength() {
     if (length >= 0) return length;
 
     // okay, we have to calculate:
-    for (int i=0; i<seq.size(); i++) {
+    for (size_t i=0; i<seq.size(); i++) {
         int from = seq[i];
         int to = -1;
         if (i<seq.size()-1) {
@@ -143,7 +153,7 @@ class TSPRouter {
     public:
         static TSPRoute * naiveOrdered(void) {
             TSPRoute * r = new TSPRoute();
-            for (int i=0; i<TSP_N; i++) r->addStep(i);
+            for (size_t i=0; i<TSP_N; i++) r->addStep(i);
             return r;
         }
         static TSPRoute * naiveRandom(void) {
@@ -151,7 +161,7 @@ class TSPRouter {
 
             // shuffle the sequence 100 times completely:
             for (int rounds = 0; rounds<100; rounds++) {
-                for (int i=0; i<TSP_N; i++) {
+                for (size_t i=0; i<TSP_N; i++) {
                     int j=rand() % TSP_N;
 
                     int temp = seq[i];
@@ -161,26 +171,26 @@ class TSPRouter {
             }
 
             TSPRoute * r = new TSPRoute();
-            for (int i=0; i<TSP_N; i++) r->addStep(seq[i]);
+            for (size_t i=0; i<TSP_N; i++) r->addStep(seq[i]);
             return r;
         }
         static TSPRoute * naiveClosest(void) {
             bool free[TSP_N];
-            for (int i=0; i<TSP_N; i++) free[i] = true;
+            for (size_t i=0; i<TSP_N; i++) free[i] = true;
 
             TSPRoute * r = new TSPRoute();
 
             // add the origin:
-            int currentIdx = 0;
+            size_t currentIdx = 0;
             r->addStep(currentIdx);
             free[currentIdx] = false;
 
             // find TSP-N - 1 connections:
-            for (int i=1; i<TSP_N; i++) {
+            for (size_t i=1; i<TSP_N; i++) {
                 // cout << "Searching for the best destination from pt #" << currentIdx << ": " << endl;
                 int closestIdx = -1;
                 double closestDistance = 1e100;
-                for (int j=0; j<TSP_N; j++) {
+                for (size_t j=0; j<TSP_N; j++) {
                     if (j==currentIdx) continue;
                     if (!free[j]) continue;
                     double d = routingTable->getDistance(currentIdx, j);
@@ -216,7 +226,7 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
 
     // cout << "Trying to find a shorter route (<" << switchLength << ") by switching any two points:" << endl;
 
-    for (int i=0; i<r->getSize(); i++) {
+    for (size_t i=0; i<r->getSize(); i++) {
         int idxA = r->getStep(i);
         int idxB = r->getStep(i+1);
 
@@ -258,6 +268,25 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
     return NULL;
 }
 
+void TSPRouteHistory::add(TSPRoute* r) {
+	// do we already have this one?
+	for (size_t i=0; i<r->getSize(); i++) {
+		TSPRoute * other = this->data->at(i);
+		if (other->equals(r)) return; // ignore...
+	}
+	data->push_back(r);
+}
+
+void TSPRouteHistory::back(void) {
+	if (this->data->size() == 0) return;
+
+	TSPRoute * r = data->back();
+	currentRoute = r;
+    painter->updateRoute(currentRoute);
+
+	data->pop_back();
+}
+
 
 
 
@@ -283,7 +312,7 @@ void createPoints(void) {
         TSPPoint p(x,y);
         try{
             points.at(i) = p;
-        } catch(out_of_range ex) {
+		} catch (const out_of_range &ex) {
             cout << ex.what() << endl;
         }
     }
@@ -309,10 +338,7 @@ void setCurrentRoute(TSPRoute * r) {
         throw runtime_error("Refusing to set currentRoute to NULL!"); exit(1);
     }
     if (currentRoute != NULL) {
-        // TODO: only add the currentRoute if it (or an identical one) has not been added before
-        // if (routeHistory.back() != currentRoute) {
-            routeHistory.push_back(currentRoute);
-        // }
+        routeHistory.add(currentRoute);
     }
     currentRoute = r;
 

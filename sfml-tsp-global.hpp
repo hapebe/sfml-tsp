@@ -12,7 +12,7 @@ using namespace std;
 vector<TSPPoint> points(TSP_N);
 TSPRoutingTable * routingTable;
 TSPRoute * currentRoute;
-vector<TSPRoute *> routeHistory(100);
+TSPRouteHistory routeHistory;
 TSPPainter * painter;
 
 

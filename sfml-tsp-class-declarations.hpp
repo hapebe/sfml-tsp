@@ -12,6 +12,7 @@ using namespace std;
 class TSPRoute;
 class TSPPoint;
 class TSPRoutingTable;
+class TSPRouteHistory;
 class TSPPainter;
 
 
@@ -20,6 +21,16 @@ class TSPPainter;
 // CLASS DECLARATIONS:                                                     //
 //                                                                         //
 /////////////////////////////////////////////////////////////////////////////
+
+class TSPRouteHistory {
+    private:
+        vector<TSPRoute *> * data;
+    public:
+        TSPRouteHistory(void) { data = new  vector<TSPRoute *>(100); }
+        ~TSPRouteHistory(void) { delete data; }
+        void add(TSPRoute * r);
+        void back(void);
+};
 
 class TSPPainter {
     protected:
@@ -33,6 +44,8 @@ class TSPPainter {
         double y0, y1, ySize;
     public:
         TSPPainter(void) {
+            x0=0, x1=0, xSize=0;
+            y0=0, y1=0, ySize=0;
             canvasX0 = 0; canvasX1 = 750; canvasSX = canvasX1 - canvasX0;
             canvasY0 = 0; canvasY1 = 750; canvasSY = canvasY1 - canvasY0;
         }
@@ -41,7 +54,7 @@ class TSPPainter {
             canvasY0 = y0; canvasY1 = y1; canvasSY = canvasY1 - canvasY0;
         }
         void updatePoints(vector<TSPPoint> data);
-        void paintPoints(sf::RenderWindow * window, int hightlight);
+        void paintPoints(sf::RenderWindow * window, size_t hightlight);
         void updateRoute(TSPRoute * r);
         void paintRoute(sf::RenderWindow * window);
         // convert between logical and screen coords:
