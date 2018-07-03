@@ -1,3 +1,10 @@
+/**
+ * because the program did not run on my Laptop (on a GeForce Go 7300),
+ * I had to switch to software rendering, using an entry in ~/.bashrc:
+ *
+ * export LIBGL_ALWAYS_SOFTWARE=1
+ */
+
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -5,7 +12,7 @@
 #include <cmath> // for sqrt()
 #include <SFML/Graphics.hpp>
 
-#define TSP_N 101 // Number of desired points in the TSP model
+#define TSP_N 15 // Number of desired points in the TSP model
 
 #include "sfml-tsp-class-declarations.hpp"
 #include "sfml-tsp-global.hpp"
