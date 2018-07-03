@@ -1,11 +1,12 @@
 # depslib dependency file v1.0
-1530258048 source:/home/user/Projekte/sfml-tsp/sfml-tsp.cpp
+1530520086 source:/home/user/Projekte/sfml-tsp/sfml-tsp.cpp
 	<iostream>
 	<sstream>
 	<vector>
 	<cstdlib>
 	<cmath>
 	<SFML/Graphics.hpp>
+	"sfml-tsp-class-declarations.hpp"
 	"sfml-tsp-global.hpp"
 	"sfml-tsp-model.hpp"
 	"sfml-tsp-analyses.hpp"
@@ -19,14 +20,14 @@
 
 1530183065 /home/user/Projekte/sfml-tsp/sfml-tsp-gfx.cpp
 
-1530258028 /home/user/Projekte/sfml-tsp/sfml-tsp-global.hpp
+1530520086 /home/user/Projekte/sfml-tsp/sfml-tsp-global.hpp
 
-1530258080 /home/user/Projekte/sfml-tsp/sfml-tsp-model.hpp
+1530520086 /home/user/Projekte/sfml-tsp/sfml-tsp-model.hpp
 
-1530257977 /home/user/Projekte/sfml-tsp/sfml-tsp-analyses.hpp
+1530263715 /home/user/Projekte/sfml-tsp/sfml-tsp-analyses.hpp
 	<iostream>
 
-1530258008 /home/user/Projekte/sfml-tsp/sfml-tsp-gfx.hpp
+1530520086 /home/user/Projekte/sfml-tsp/sfml-tsp-gfx.hpp
 
 1530311446 source:/home/hapebe/projects/sfml-tsp/sfml-tsp.cpp
 	<iostream>
@@ -51,4 +52,6 @@
 	<iostream>
 
 1530310512 /home/hapebe/projects/sfml-tsp/sfml-tsp-gfx.hpp
+
+1530520086 /home/user/Projekte/sfml-tsp/sfml-tsp-class-declarations.hpp
 
