@@ -13,9 +13,8 @@ vector<TSPPoint> points(TSP_N);
 TSPRoutingTable * routingTable;
 TSPRoute * currentRoute;
 TSPRouteHistory * routeHistory;
+TSPRouteOptimizer * optimizer;
 TSPPainter * painter;
-
-
 
 
 int currentMouseX = -1;

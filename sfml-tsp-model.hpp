@@ -225,7 +225,11 @@ class TSPRouter {
 
 class TSPRouteOptimizer {
     public:
-        static TSPRoute * switchAnyTwoPoints(TSPRoute * r);
+		TSPRouteOptimizer() {}
+        TSPRoute * switchAnyTwoPoints(TSPRoute * r);
+        TSPRoute * moveSinglePoint(TSPRoute * r);
+        void findIntersections(TSPRoute * r);
+        ~TSPRouteOptimizer() {}
 };
 
 TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
@@ -278,6 +282,76 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
 
     return NULL;
 }
+
+TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
+    double benchmark = original->getLength();
+    size_t N = original->getSize();
+
+    double bestLength = benchmark;
+    int actualSwitchIdx = -1; // point at this index in the original route should be moved
+    int actualSwitchShift = -1; // ... by this many positions (forward)
+
+
+    cout << "Trying to find a shorter route (<" << benchmark << ") by moving any single point anywhere:" << endl;
+
+    for (size_t i=0; i<N; i++) {
+        int idxA = original->getStep(i);
+
+        cout << "Considering point at #" << i << " which is p" << idxA << endl;
+        for (size_t j=1; j<N-1; j++) {
+            TSPRoute * r = original->clone();
+
+            cout << "Considering moving the following " << j << " points over..." << endl;
+
+            for (size_t k=0; k<j; k++) {
+
+    			// pull the elements in-between forward:
+                cout << "Pulling forward point at #" << (i+k+1) << "..." << endl;
+                r->setStep(i+k, r->getStep(i+k+1));
+            }
+
+
+
+
+
+
+			r->setStep(i, idxB);
+			r->setStep(i+1, idxA);
+
+        if (r->getLength() < switchLength) {
+            actualSwitchIdx = i;
+            switchLength = r->getLength();
+        }
+
+        // restore:
+        r->setStep(i, idxA);
+        r->setStep(i+1, idxB);
+    }
+
+    if (actualSwitchIdx >= 0) {
+
+        // actually do:
+        int idxA = r->getStep(actualSwitchIdx);
+        int idxB = r->getStep(actualSwitchIdx+1);
+
+        r->setStep(actualSwitchIdx, idxB);
+        r->setStep(actualSwitchIdx+1, idxA);
+
+        cout << "Found a shorter (" << r->getLength() << ") route in switchAnyTwoPoints: " << idxA << "<->" << idxB << endl;
+
+        if (!r->isComplete()) {
+            throw new runtime_error("switchAnyTwoPoints() produced an incomplete route!"); exit(1);
+        }
+
+        return r;
+    } else {
+        // free the unsuccessful temporary route:
+        delete r;
+    }
+
+    return NULL;
+}
+
 
 void TSPRouteHistory::add(TSPRoute* r) {
 	// do we already have this one?
