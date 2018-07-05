@@ -25,6 +25,7 @@ void init(void) {
     currentRoute = NULL;
     painter = new TSPPainter();
     routeHistory = new TSPRouteHistory();
+    optimizer = new TSPRouteOptimizer();
 
     // create and set up the application's data model:
     createPoints();
@@ -42,12 +43,17 @@ void init(void) {
 
 void destroy(void) {
     // clean up after the application:
+
+    delete optimizer; optimizer = NULL;
+    delete routeHistory; routeHistory = NULL;
+    delete painter; painter = NULL;
+
     deletePoints(); // in sfml-tsp-model.cpp
     deleteRoutingTable();
 }
 
 int main() {
-    // LinearEquation::testCase1(); exit(1);
+    // LinearEquation::testCase2(); exit(1);
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
@@ -95,10 +101,8 @@ int main() {
                     }
                     if (event.key.code == sf::Keyboard::O) {
                         // optimize the current route:
-                        TSPRoute * candidate = TSPRouteOptimizer::switchAnyTwoPoints(currentRoute);
-                        if (candidate != NULL) {
-                            setCurrentRoute(candidate);
-                        }
+                        TSPRoute * candidate = optimizer->switchAnyTwoPoints(currentRoute);
+                        if (candidate != NULL) setCurrentRoute(candidate);
                     }
                     if (event.key.code == sf::Keyboard::B) {
                         // one step back in the route history:
@@ -108,10 +112,12 @@ int main() {
 
                 // mouse events
                 case sf::Event::MouseEntered:
-                    std::cout << "the mouse cursor has entered the window" << std::endl; break;
+                    // std::cout << "the mouse cursor has entered the window" << std::endl;
+                	break;
 
                 case sf::Event::MouseLeft:
-                    std::cout << "the mouse cursor has left the window" << std::endl; break;
+                    // std::cout << "the mouse cursor has left the window" << std::endl;
+                	break;
 
                 case sf::Event::MouseMoved:
                     currentMouseX = event.mouseMove.x;
