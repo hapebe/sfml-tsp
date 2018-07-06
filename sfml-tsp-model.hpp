@@ -95,9 +95,11 @@ class TSPRoute {
             length = -1; // length has to be recalculated
         }
         bool isComplete(void);
+        bool hasDuplicatePoints(void);
         size_t getSize(void) { return seq.size(); }
         double getLength(void);
         int getIndexOf(int pointID);
+        string describe(void);
 };
 
 TSPRoute * TSPRoute::clone(void) {
@@ -132,6 +134,19 @@ bool TSPRoute::isComplete() {
     return true;
 }
 
+bool TSPRoute::hasDuplicatePoints() {
+    static int cnt[TSP_N];
+    for (size_t i=0; i<TSP_N; i++) cnt[i] = 0;
+    for (size_t i=0; i<seq.size(); i++) {
+        cnt[seq[i]] ++;
+    }
+    for (size_t i=0; i<TSP_N; i++) {
+        if (cnt[i] > 1) return true;
+    }
+    return false;
+}
+
+
 double TSPRoute::getLength() {
     if (length >= 0) return length;
 
@@ -158,6 +173,30 @@ int TSPRoute::getIndexOf(int pointID) {
 	// not found!
 	return -1;
 }
+
+string TSPRoute::describe(void) {
+	stringstream ss;
+
+	ss << "Route with " << this->getSize() << " points, l=" << this->getLength() << endl;
+	if (this->isComplete()) {
+		ss << "It contains all points." << endl;
+	} else {
+		ss << "It does not contain all points!" << endl;
+	}
+	if (this->hasDuplicatePoints()) ss << "It contains duplicate points!" << endl;
+
+	// Append the points themselves:
+	size_t i;
+	for (i=0; i<this->getSize(); i++) {
+		ss << "#" << this->getStep(i);
+		if (i < this->getSize() - 1) ss << "; ";
+		if ((i+1) % 10 == 0) cout << endl;
+	}
+	if (i % 10 != 0) cout << endl;
+
+	return ss.str();
+}
+
 
 
 class TSPRouter {
@@ -290,6 +329,7 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
     double bestLength = benchmark;
     int actualSwitchIdx = -1; // point at this index in the original route should be moved
     int actualSwitchShift = -1; // ... by this many positions (forward)
+    TSPRoute * bestRoute = NULL;
 
 
     cout << "Trying to find a shorter route (<" << benchmark << ") by moving any single point anywhere:" << endl;
@@ -309,47 +349,35 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
                 cout << "Pulling forward point at #" << (i+k+1) << "..." << endl;
                 r->setStep(i+k, r->getStep(i+k+1));
             }
+            // and place the original element:
+            r->setStep(i+j, idxA);
 
+			if (r->getLength() < bestLength) {
+				cout << "Found a better route! (l=" << r->getLength() << ")" << endl;
+				bestLength = r->getLength();
 
+				actualSwitchIdx = i;
+				actualSwitchShift = j;
 
+				if (bestRoute != NULL) delete bestRoute;
+				bestRoute = r;
+			} else {
+				delete r;
+			}
+        } // next shift amount
+    } // next focus point
 
+    if (bestRoute != NULL) {
+    	cout << "Found a shorter route in TSPRouteOptimizer::moveSinglePoint()" << endl;
+    	cout << "Moving point at " << actualSwitchIdx << " by " << actualSwitchShift << " positions." << endl;
+    	cout << bestRoute->describe();
 
-
-			r->setStep(i, idxB);
-			r->setStep(i+1, idxA);
-
-        if (r->getLength() < switchLength) {
-            actualSwitchIdx = i;
-            switchLength = r->getLength();
+        if (!bestRoute->isComplete()) {
+            throw new runtime_error("TSPRouteOptimizer::moveSinglePoint() produced an incomplete route!"); exit(1);
         }
-
-        // restore:
-        r->setStep(i, idxA);
-        r->setStep(i+1, idxB);
     }
 
-    if (actualSwitchIdx >= 0) {
-
-        // actually do:
-        int idxA = r->getStep(actualSwitchIdx);
-        int idxB = r->getStep(actualSwitchIdx+1);
-
-        r->setStep(actualSwitchIdx, idxB);
-        r->setStep(actualSwitchIdx+1, idxA);
-
-        cout << "Found a shorter (" << r->getLength() << ") route in switchAnyTwoPoints: " << idxA << "<->" << idxB << endl;
-
-        if (!r->isComplete()) {
-            throw new runtime_error("switchAnyTwoPoints() produced an incomplete route!"); exit(1);
-        }
-
-        return r;
-    } else {
-        // free the unsuccessful temporary route:
-        delete r;
-    }
-
-    return NULL;
+    return bestRoute;
 }
 
 

@@ -12,7 +12,7 @@
 #include <cmath> // for sqrt()
 #include <SFML/Graphics.hpp>
 
-#define TSP_N 15 // Number of desired points in the TSP model
+#define TSP_N 4 // Number of desired points in the TSP model
 
 #include "sfml-tsp-class-declarations.hpp"
 #include "sfml-tsp-global.hpp"
@@ -37,8 +37,9 @@ void init(void) {
     // setCurrentRoute(TSPRouter::naiveOrdered());
     // setCurrentRoute(TSPRouter::naiveClosest());
     setRandomRoute();
-    cout << "Current Route is " << (currentRoute->isComplete()?"complete":"not complete") << "." << endl;
-    cout << "Route length: " << currentRoute->getLength() << "." << endl;
+    cout << "Current route: " << currentRoute->describe();
+    // cout << "Current Route is " << (currentRoute->isComplete()?"complete":"not complete") << "." << endl;
+    // cout << "Route length: " << currentRoute->getLength() << "." << endl;
 }
 
 void destroy(void) {
