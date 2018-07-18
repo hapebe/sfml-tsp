@@ -81,6 +81,18 @@ void TSPPainter::paintPoints(sf::RenderWindow * window, size_t highlight) {
             dots[i].setRadius(5);
             dots[i].move(15,15);
         }
+
+        if (this->paintPointLabels) {
+        	sf::Text text;
+        	text.setFont(font0);
+        	text.setString(to_string(i));
+        	text.setCharacterSize(14); // in pixels, not points!
+        	text.setFillColor(sf::Color::Red);
+        	// text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+        	text.move(dots[i].getPosition().x -16, dots[i].getPosition().y - 6);
+        	window->draw(text);
+        }
     }
 }
 
@@ -100,6 +112,23 @@ void TSPPainter::updateRoute(TSPRoute * r) {
 
 void TSPPainter::paintRoute(sf::RenderWindow * window) {
     window->draw(routeLine, TSP_N+1, sf::LineStrip);
+
+    if (this->paintPointLabels) {
+        for(size_t i=0; i<currentRoute->getSize(); i++) {
+        	// which original point is at this position?
+        	int pointIdx = currentRoute->getStep(i);
+
+			sf::Text text;
+			text.setFont(font0);
+			text.setString(to_string(i)); // print the position within the route!
+			text.setCharacterSize(14); // in pixels, not points!
+			text.setFillColor(sf::Color::Green);
+			// text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+			text.move(dots[pointIdx].getPosition().x +12, dots[pointIdx].getPosition().y - 6);
+			window->draw(text);
+        }
+    }
 }
 
 #endif

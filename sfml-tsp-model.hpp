@@ -100,6 +100,7 @@ class TSPRoute {
         double getLength(void);
         int getIndexOf(int pointID);
         string describe(void);
+        string describePoints(void);
 };
 
 TSPRoute * TSPRoute::clone(void) {
@@ -186,13 +187,22 @@ string TSPRoute::describe(void) {
 	if (this->hasDuplicatePoints()) ss << "It contains duplicate points!" << endl;
 
 	// Append the points themselves:
+	ss << this->describePoints();
+
+	return ss.str();
+}
+
+string TSPRoute::describePoints(void) {
+	stringstream ss;
+
+	// Append the points themselves:
 	size_t i;
 	for (i=0; i<this->getSize(); i++) {
 		ss << "#" << this->getStep(i);
 		if (i < this->getSize() - 1) ss << "; ";
-		if ((i+1) % 10 == 0) cout << endl;
+		if ((i+1) % 10 == 0) ss << endl;
 	}
-	if (i % 10 != 0) cout << endl;
+	if (this->getSize() % 10 != 0) ss << endl;
 
 	return ss.str();
 }
@@ -331,29 +341,32 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
     int actualSwitchShift = -1; // ... by this many positions (forward)
     TSPRoute * bestRoute = NULL;
 
-
+    cout << "Current route: " << original->describe();
     cout << "Trying to find a shorter route (<" << benchmark << ") by moving any single point anywhere:" << endl;
 
     for (size_t i=0; i<N; i++) {
         int idxA = original->getStep(i);
 
-        cout << "Considering point at #" << i << " which is p" << idxA << endl;
+        cout << "  Considering point at #" << i << " which is p" << idxA << endl;
         for (size_t j=1; j<N-1; j++) {
             TSPRoute * r = original->clone();
 
-            cout << "Considering moving the following " << j << " points over..." << endl;
+            cout << "    Considering moving the next " << j << " points over..." << endl;
 
             for (size_t k=0; k<j; k++) {
 
     			// pull the elements in-between forward:
-                cout << "Pulling forward point at #" << (i+k+1) << "..." << endl;
+                // cout << "      Pulling forward point at #" << (i+k+1) << "..." << endl;
                 r->setStep(i+k, r->getStep(i+k+1));
             }
             // and place the original element:
+            // cout << "      Placing original point " << idxA << " at #" << (i+j) << "..." << endl;
             r->setStep(i+j, idxA);
 
+            // cout << "    Resulting route: " << r->describePoints();
+
 			if (r->getLength() < bestLength) {
-				cout << "Found a better route! (l=" << r->getLength() << ")" << endl;
+				cout << "    Found a better route! (l=" << r->getLength() << ")" << endl;
 				bestLength = r->getLength();
 
 				actualSwitchIdx = i;
@@ -362,6 +375,7 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
 				if (bestRoute != NULL) delete bestRoute;
 				bestRoute = r;
 			} else {
+				cout << "    ... not shorter: " << r->getLength() << endl;
 				delete r;
 			}
         } // next shift amount
@@ -413,8 +427,6 @@ void TSPRouteHistory::back(void) {
 /////////////////////////////////////////////////////////////////////////////
 
 void createPoints(void) {
-    srand(0); // use a fixed random seed, so the point configuration becomes predictable
-
     for (int i=0; i<TSP_N; i++) {
         double x = 0;
         for (int j=0; j<12; j++) x += randomDouble();

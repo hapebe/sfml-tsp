@@ -12,7 +12,11 @@
 #include <cmath> // for sqrt()
 #include <SFML/Graphics.hpp>
 
-#define TSP_N 4 // Number of desired points in the TSP model
+#define TSP_N 100 // Number of desired points in the TSP model
+#define SEED_POINTS 2
+#define SEED_ROUTE 2
+
+#define FONT0 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 #include "sfml-tsp-class-declarations.hpp"
 #include "sfml-tsp-global.hpp"
@@ -22,6 +26,8 @@
 
 
 void init(void) {
+    srand(SEED_POINTS); // use a fixed random seed, so the point configuration becomes predictable
+
     currentRoute = NULL;
     painter = new TSPPainter();
     routeHistory = new TSPRouteHistory();
@@ -34,12 +40,13 @@ void init(void) {
     createRoutingTable();
     cout << routingTable->debug();
 
+    srand(SEED_ROUTE); // use a fixed random seed, so the point configuration becomes predictable
+
     // setCurrentRoute(TSPRouter::naiveOrdered());
     // setCurrentRoute(TSPRouter::naiveClosest());
     setRandomRoute();
+
     cout << "Current route: " << currentRoute->describe();
-    // cout << "Current Route is " << (currentRoute->isComplete()?"complete":"not complete") << "." << endl;
-    // cout << "Route length: " << currentRoute->getLength() << "." << endl;
 }
 
 void destroy(void) {
@@ -96,13 +103,14 @@ int main() {
 
                 // key pressed
                 case sf::Event::KeyPressed:
-                    std::cout << "key pressed: " << event.key.code << std::endl;
+                    // std::cout << "key pressed: " << event.key.code << std::endl;
                     if (event.key.code == sf::Keyboard::Space) {
                         setRandomRoute();
                     }
                     if (event.key.code == sf::Keyboard::O) {
                         // optimize the current route:
-                        TSPRoute * candidate = optimizer->switchAnyTwoPoints(currentRoute);
+                        // TSPRoute * candidate = optimizer->switchAnyTwoPoints(currentRoute);
+                        TSPRoute * candidate = optimizer->moveSinglePoint(currentRoute);
                         if (candidate != NULL) setCurrentRoute(candidate);
                     }
                     if (event.key.code == sf::Keyboard::B) {
