@@ -153,4 +153,67 @@ public:
 
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+//                                                                         //
+// CLASS DECLARATIONS:                                                     //
+//                                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+class TSPRouteAnalyzer {
+    public:
+		static bool findIntersections(TSPRoute * r) {
+			int n=0;
+
+			// i -> all segments
+			for (size_t i=0; i<r->getSize(); i++) {
+				int idxA = r->getStep(i);
+				int idxB = r->getStep(i+1); // this wraps around at the end
+				// j -> all segments
+				for (size_t j=i+2; j<r->getSize(); j++) {
+					if (i == 0 && j == r->getSize()-1) continue;
+					if (i == 0 && j == r->getSize()-2) continue;
+					if (i == 1 && j == r->getSize()-1) continue;
+					// if (i+1==j || i==j || i==j+1) continue; // ignore the very same segment
+					// also, adjoining segments should never overlap.
+					// For routes between 2 points things look grim,
+					// but let's ignore that for now.
+					int idxC = r->getStep(j);
+					int idxD = r->getStep(j+1); // this wraps around at the end
+
+					sf::Vector2<double> a(points[idxA].getX(), points[idxA].getY());
+					sf::Vector2<double> b(points[idxB].getX(), points[idxB].getY());
+					sf::Vector2<double> c(points[idxC].getX(), points[idxC].getY());
+					sf::Vector2<double> d(points[idxD].getX(), points[idxD].getY());
+
+					LinearEquation le(a, b, c, d);
+
+					if (!le.hasIntersection()) continue;
+
+					sf::Vector2<double> intersection = le.getIntersection();
+					if (le.isPointOnLineAB(intersection) && le.isPointOnLineCD(intersection)) {
+						n++;
+
+						// compare length of AB + CD to AD + BC:
+						double ab = routingTable->getDistance(idxA, idxB);
+						double cd = routingTable->getDistance(idxC, idxD);
+
+						double ad = routingTable->getDistance(idxA, idxD);
+						double bc = routingTable->getDistance(idxB, idxC);
+
+						double reduction = (ab+cd) - (ad+bc);
+
+						cout << "Segment " << i << " intersects with seg. " << j << ": ";
+						cout << "AB (" << idxA << "-" << idxB << ") and ";
+						cout << "CD (" << idxC << "-" << idxD << "), ";
+						cout << "l=" << (ab+cd) << " vs. " << (ad+bc) << " (minus " << reduction <<  ")" << endl;
+					}
+				}
+			}
+
+			return (n>0);
+		}
+};
+
+
 #endif

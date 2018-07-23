@@ -11,9 +11,10 @@
 #include <cstdlib> // for rand() and srand()
 #include <cmath> // for sqrt()
 #include <SFML/Graphics.hpp>
+#include <stdio.h> // for sprintf()
 
-#define TSP_N 100 // Number of desired points in the TSP model
-#define SEED_POINTS 2
+#define TSP_N 25 // Number of desired points in the TSP model
+#define SEED_POINTS 4
 #define SEED_ROUTE 2
 
 #define FONT0 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -37,7 +38,7 @@ void init(void) {
     createPoints();
     painter->updatePoints(points);
 
-    createRoutingTable();
+    routingTable = new TSPRoutingTable(points);
     cout << routingTable->debug();
 
     srand(SEED_ROUTE); // use a fixed random seed, so the point configuration becomes predictable
@@ -90,8 +91,7 @@ int main() {
         while (window.pollEvent(event)) {
             switch (event.type) {
                 case sf::Event::Resized:
-                    std::cout << "new width: " << event.size.width << std::endl;
-                    std::cout << "new height: " << event.size.height << std::endl;
+                    std::cout << "new width: " << event.size.width << ", new height: " << event.size.height << std::endl;
                     painter->setCanvas(0,0,event.size.width, event.size.height);
                     break;
 
@@ -107,15 +107,30 @@ int main() {
                     if (event.key.code == sf::Keyboard::Space) {
                         setRandomRoute();
                     }
-                    if (event.key.code == sf::Keyboard::O) {
-                        // optimize the current route:
-                        // TSPRoute * candidate = optimizer->switchAnyTwoPoints(currentRoute);
-                        TSPRoute * candidate = optimizer->moveSinglePoint(currentRoute);
-                        if (candidate != NULL) setCurrentRoute(candidate);
+                    if (event.key.code == sf::Keyboard::O) { // optimize the current route:
+                    	TSPRoute * candidate = NULL;
+
+                    	// try to simply switch two connected points:
+                        candidate = optimizer->switchAnyTwoPoints(currentRoute);
+
+                        if (candidate == NULL) {
+                        	// try to move any single point anywhere:
+                        	candidate = optimizer->moveSinglePoint(currentRoute);
+                        }
+
+                        if (candidate != NULL) {
+                        	cout << optimizer->getLastMessage() << endl;
+                        	setCurrentRoute(candidate);
+                        }
                     }
                     if (event.key.code == sf::Keyboard::B) {
                         // one step back in the route history:
 						routeHistory->back();
+                    }
+                    if (event.key.code == sf::Keyboard::I) {
+                    	cout << "Finding intersections on the current route... " << endl;
+                    	bool result = TSPRouteAnalyzer::findIntersections(currentRoute);
+                    	if (!result) cout << "   ... none found." << endl;
                     }
                     break;
 

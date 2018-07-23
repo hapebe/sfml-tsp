@@ -15,6 +15,7 @@ class TSPRoutingTable;
 class TSPRouteHistory;
 class TSPPainter;
 class TSPRouteOptimizer;
+class TSPRouteAnalyzer;
 
 
 /////////////////////////////////////////////////////////////////////////////

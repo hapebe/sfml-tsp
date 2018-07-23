@@ -14,9 +14,10 @@ class TSPPoint {
     protected:
         double x;
         double y;
+        sf::Vector2<double> * v2d;
     public:
-        TSPPoint() { this->x=0; this->y=0; }
-        TSPPoint(double x, double y) { this->x=x; this->y=y; }
+        TSPPoint() { x=0; y=0; this->v2d = new sf::Vector2<double>(x,y); }
+        TSPPoint(double x, double y) { this->x=x; this->y=y; this->v2d = new sf::Vector2<double>(x,y); }
         double getX(void) { return x; }
         double getY(void) { return y; }
         double getDistanceTo(double x, double y) {
@@ -25,6 +26,8 @@ class TSPPoint {
             return sqrt(dx*dx + dy*dy);
         }
         double getDistanceTo(TSPPoint other) { return getDistanceTo(other.getX(), other.getY()); }
+        sf::Vector2<double> const * getVector2(void) { return v2d; }
+        // ~TSPPoint() { delete v2d; }
 
     // allow the following function to access private elements:
     friend ostream& operator<<(ostream& os, TSPPoint const& p);
@@ -94,11 +97,13 @@ class TSPRoute {
             seq[(idx + getSize()) % getSize()] = point;
             length = -1; // length has to be recalculated
         }
+        int getIndexOf(int pointID);
         bool isComplete(void);
         bool hasDuplicatePoints(void);
         size_t getSize(void) { return seq.size(); }
         double getLength(void);
-        int getIndexOf(int pointID);
+        void reverse(void);
+        void reverseFromTo(int a, int b);
         string describe(void);
         string describePoints(void);
 };
@@ -111,6 +116,33 @@ TSPRoute * TSPRoute::clone(void) {
 
     return retval;
 }
+
+void TSPRoute::reverse(void) {
+	// create a new vector containing the elements in reverse order:
+	vector<int> seq1;
+	for (size_t i=seq.size(); i>0; i--) seq1.push_back(seq[i-1]);
+
+	// copy back the new vector:
+	for (size_t i=0; i<seq.size(); i++)	seq[i] = seq1[i];
+}
+
+
+/**
+ * reverses a part of the route: points from index #a to #b (inclusive)
+ */
+void TSPRoute::reverseFromTo(int a, int b) {
+	if (b < a) b+= this->getSize();
+	size_t length = b - a + 1;
+	// create a new vector containing the elements in reverse order:
+	vector<int> seq1;
+	for (size_t i=0; i<length; i++) {
+		seq1.push_back(getStep(b-i));
+	}
+
+	// copy back the new vector:
+	for (size_t i=0; i<length; i++) seq[a+i] = seq1[i];
+}
+
 
 bool TSPRoute::equals(TSPRoute * other) {
     if (other == NULL) return false;
@@ -146,7 +178,6 @@ bool TSPRoute::hasDuplicatePoints() {
     }
     return false;
 }
-
 
 double TSPRoute::getLength() {
     if (length >= 0) return length;
@@ -273,11 +304,18 @@ class TSPRouter {
 };
 
 class TSPRouteOptimizer {
-    public:
-		TSPRouteOptimizer() {}
+	protected:
+    	int verbosity;
+    	int successCount;
+    	string lastMessage;
+	public:
+		TSPRouteOptimizer() { successCount=0; verbosity=0; }
         TSPRoute * switchAnyTwoPoints(TSPRoute * r);
         TSPRoute * moveSinglePoint(TSPRoute * r);
         void findIntersections(TSPRoute * r);
+        void setVerbosity(int v) { if (v>=0 && v<=2) this->verbosity=v; }
+        int getSuccessCount(void) { return successCount; }
+        string getLastMessage(void) { return lastMessage; }
         ~TSPRouteOptimizer() {}
 };
 
@@ -309,6 +347,7 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
     }
 
     if (actualSwitchIdx >= 0) {
+		successCount ++;
 
         // actually do:
         int idxA = r->getStep(actualSwitchIdx);
@@ -317,7 +356,10 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
         r->setStep(actualSwitchIdx, idxB);
         r->setStep(actualSwitchIdx+1, idxA);
 
-        cout << "Found a shorter (" << r->getLength() << ") route in switchAnyTwoPoints: " << idxA << "<->" << idxB << endl;
+		stringstream ss;
+		ss << "Found a shorter (" << r->getLength() << ") route in switchAnyTwoPoints: " << idxA << "<->" << idxB << endl;
+		if (verbosity > 0) cout << ss.str();
+		lastMessage = ss.str();
 
         if (!r->isComplete()) {
             throw new runtime_error("switchAnyTwoPoints() produced an incomplete route!"); exit(1);
@@ -341,17 +383,19 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
     int actualSwitchShift = -1; // ... by this many positions (forward)
     TSPRoute * bestRoute = NULL;
 
-    cout << "Current route: " << original->describe();
-    cout << "Trying to find a shorter route (<" << benchmark << ") by moving any single point anywhere:" << endl;
+    if (verbosity >= 1) {
+		cout << "Current route: " << original->describe();
+		cout << "Trying to find a shorter route (<" << benchmark << ") by moving any single point anywhere:" << endl;
+    }
 
     for (size_t i=0; i<N; i++) {
         int idxA = original->getStep(i);
 
-        cout << "  Considering point at #" << i << " which is p" << idxA << endl;
+        if (verbosity >= 2) { cout << "  Considering point at #" << i << " which is p" << idxA << endl; }
         for (size_t j=1; j<N-1; j++) {
             TSPRoute * r = original->clone();
 
-            cout << "    Considering moving the next " << j << " points over..." << endl;
+            if (verbosity >= 2) { cout << "    Considering moving the next " << j << " points over..." << endl; }
 
             for (size_t k=0; k<j; k++) {
 
@@ -366,7 +410,7 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
             // cout << "    Resulting route: " << r->describePoints();
 
 			if (r->getLength() < bestLength) {
-				cout << "    Found a better route! (l=" << r->getLength() << ")" << endl;
+				if (verbosity >= 1) { cout << "    Found a better route! (l=" << r->getLength() << ")" << endl; }
 				bestLength = r->getLength();
 
 				actualSwitchIdx = i;
@@ -375,16 +419,20 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
 				if (bestRoute != NULL) delete bestRoute;
 				bestRoute = r;
 			} else {
-				cout << "    ... not shorter: " << r->getLength() << endl;
+				if (verbosity >= 2) { cout << "    ... not shorter: " << r->getLength() << endl; }
 				delete r;
 			}
         } // next shift amount
     } // next focus point
 
     if (bestRoute != NULL) {
-    	cout << "Found a shorter route in TSPRouteOptimizer::moveSinglePoint()" << endl;
-    	cout << "Moving point at " << actualSwitchIdx << " by " << actualSwitchShift << " positions." << endl;
-    	cout << bestRoute->describe();
+    	this->successCount ++;
+		stringstream ss;
+		ss << "Found a shorter route in TSPRouteOptimizer::moveSinglePoint()" << endl;
+		ss << "Moving point at " << actualSwitchIdx << " by " << actualSwitchShift << " positions." << endl;
+		ss << bestRoute->describe();
+		this->lastMessage = ss.str();
+		if (verbosity >= 1) cout << ss.str();
 
         if (!bestRoute->isComplete()) {
             throw new runtime_error("TSPRouteOptimizer::moveSinglePoint() produced an incomplete route!"); exit(1);
@@ -449,10 +497,6 @@ void deletePoints(void) {
 //    for (int i=0; i<points.size(); i++) {
 //        delete(points[i]);
 //    }
-}
-
-void createRoutingTable() {
-    routingTable = new TSPRoutingTable(points);
 }
 
 void deleteRoutingTable() { delete(routingTable); routingTable = NULL; }

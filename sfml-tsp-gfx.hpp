@@ -1,6 +1,8 @@
 #ifndef TSP_GFX
 #define TSP_GFX 1
 
+#include <stdio.h>
+
 #define CANVAS_W 750
 #define CANVAS_H 750
 
@@ -129,6 +131,42 @@ void TSPPainter::paintRoute(sf::RenderWindow * window) {
 			window->draw(text);
         }
     }
+
+    // display current route length:
+    if (currentRoute != NULL) {
+    	char buffer[32];
+    	char* pBuffer = &buffer[0];
+    	sprintf(pBuffer, "%02.3lf", currentRoute->getLength());
+    	string s("l=");
+    	s += pBuffer;
+
+		sf::Text text;
+		text.setFont(font0);
+		text.setString(s); // print the position within the route!
+		text.setCharacterSize(14); // in pixels, not points!
+		text.setFillColor(sf::Color::White);
+		// text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+		text.move(10, 10);
+		window->draw(text);
+    }
+
+    // display count of successful optimizations:
+    if (currentRoute != NULL) {
+    	string s("N(opt)=");
+    	s += to_string(optimizer->getSuccessCount());
+
+		sf::Text text;
+		text.setFont(font0);
+		text.setString(s); // print the position within the route!
+		text.setCharacterSize(14); // in pixels, not points!
+		text.setFillColor(sf::Color::White);
+		// text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+		text.move(this->canvasX1 - 100, 10);
+		window->draw(text);
+    }
+
 }
 
 #endif
