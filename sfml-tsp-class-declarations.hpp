@@ -10,6 +10,7 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 
 class TSPRoute;
+class TSPSplitRoute;
 class TSPPoint;
 class TSPRoutingTable;
 class TSPRouteHistory;
@@ -56,7 +57,7 @@ class TSPPainter {
             y0=0, y1=0, ySize=0;
             canvasX0 = 0; canvasX1 = 750; canvasSX = canvasX1 - canvasX0;
             canvasY0 = 0; canvasY1 = 750; canvasSY = canvasY1 - canvasY0;
-            paintPointLabels = true;
+            paintPointLabels = false;
         }
         void setCanvas(int x0, int y0, int x1, int y1) {
             canvasX0 = x0; canvasX1 = x1; canvasSX = canvasX1 - canvasX0;
@@ -73,6 +74,11 @@ class TSPPainter {
         double py2y(int y);
         ~TSPPainter() { }
 
+};
+
+class TSPRouteAnalyzer {
+    public:
+		static TSPSplitRoute * findIntersections(TSPRoute * r);
 };
 
 

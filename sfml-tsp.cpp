@@ -13,9 +13,9 @@
 #include <SFML/Graphics.hpp>
 #include <stdio.h> // for sprintf()
 
-#define TSP_N 25 // Number of desired points in the TSP model
-#define SEED_POINTS 4
-#define SEED_ROUTE 2
+#define TSP_N 500 // Number of desired points in the TSP model
+#define SEED_POINTS 1
+#define SEED_ROUTE 1
 
 #define FONT0 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
@@ -110,8 +110,15 @@ int main() {
                     if (event.key.code == sf::Keyboard::O) { // optimize the current route:
                     	TSPRoute * candidate = NULL;
 
-                    	// try to simply switch two connected points:
-                        candidate = optimizer->switchAnyTwoPoints(currentRoute);
+                        if (candidate == NULL) {
+                        	// try to eliminate an intersection:
+                        	candidate = optimizer->untangleIntersection(currentRoute);
+                        }
+
+                        if (candidate == NULL) {
+							// try to simply switch two connected points:
+							candidate = optimizer->switchAnyTwoPoints(currentRoute);
+                        }
 
                         if (candidate == NULL) {
                         	// try to move any single point anywhere:

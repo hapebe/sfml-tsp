@@ -91,12 +91,15 @@ class TSPRoute {
         TSPRoute() { this->length = -1; }
         TSPRoute * clone(void);
         bool equals(TSPRoute * other);
-        void addStep(int idx) { seq.push_back(idx); }
-        int getStep(int idx) { return seq[(idx + getSize()) % getSize()]; }
+        void addStep(int idx) {
+        	seq.push_back(idx);
+        	length = -1; // length has to be recalculated
+        }
         void setStep(int idx, int point) {
             seq[(idx + getSize()) % getSize()] = point;
             length = -1; // length has to be recalculated
         }
+        int getStep(int idx) { return seq[(idx + getSize()) % getSize()]; }
         int getIndexOf(int pointID);
         bool isComplete(void);
         bool hasDuplicatePoints(void);
@@ -239,6 +242,70 @@ string TSPRoute::describePoints(void) {
 }
 
 
+class TSPSplitRoute {
+	private:
+		TSPRoute * ra;
+		TSPRoute * rb;
+	public:
+		TSPSplitRoute(TSPRoute * orig, size_t splitA, size_t splitB);
+		string describe(void);
+		void reverseB(void);
+		TSPRoute * join(void);
+		~TSPSplitRoute() { delete ra; delete rb; }
+};
+
+/**
+ * @param splitA the index of the point in the route AFTER which the first cut should be made
+ * @param splitB the index of the point in the route AFTER which the second cut should be made
+ */
+TSPSplitRoute::TSPSplitRoute(TSPRoute * orig, size_t splitA, size_t splitB) {
+	if (orig == NULL) { throw new runtime_error("TSPSplitRoute: original route is NULL!"); exit(1); }
+	if (splitA == splitB) { throw new runtime_error("TSPSplitRoute: split points A and B are identical!"); exit(1); }
+
+	// make sure that point A is before B:
+	if (splitA > splitB) {
+		int temp = splitA;
+		splitA = splitB;
+		splitB = temp;
+	}
+
+	this->ra = new TSPRoute();
+	for (size_t i=splitA + 1 ; i <= splitB; i++) {
+		ra->addStep(orig->getStep(i));
+	}
+
+	// wrap over the end of the route:
+	splitA += orig->getSize();
+
+	this->rb = new TSPRoute();
+	for (size_t i=splitB + 1 ; i <= splitA; i++) {
+		rb->addStep(orig->getStep(i));
+	}
+
+	if (ra->getSize() + rb->getSize() != orig->getSize()) {
+		throw new runtime_error("TSPSplitRoute: something went wrong (unexpected size of split routes...)!"); exit(1);
+	}
+}
+
+void TSPSplitRoute::reverseB(void) {
+	rb->reverse();
+}
+
+TSPRoute * TSPSplitRoute::join(void) {
+	TSPRoute * retval = new TSPRoute();
+	for (size_t i=0; i<ra->getSize(); i++) retval->addStep(ra->getStep(i));
+	for (size_t i=0; i<rb->getSize(); i++) retval->addStep(rb->getStep(i));
+	return retval;
+}
+
+string TSPSplitRoute::describe(void) {
+	stringstream ss;
+	ss << "Split route:" << endl;
+	ss << "Part A: " << ra->describe();
+	ss << "Part B: " << rb->describe();
+	return ss.str();
+}
+
 
 class TSPRouter {
     public:
@@ -312,7 +379,7 @@ class TSPRouteOptimizer {
 		TSPRouteOptimizer() { successCount=0; verbosity=0; }
         TSPRoute * switchAnyTwoPoints(TSPRoute * r);
         TSPRoute * moveSinglePoint(TSPRoute * r);
-        void findIntersections(TSPRoute * r);
+        TSPRoute * untangleIntersection(TSPRoute * r);
         void setVerbosity(int v) { if (v>=0 && v<=2) this->verbosity=v; }
         int getSuccessCount(void) { return successCount; }
         string getLastMessage(void) { return lastMessage; }
@@ -430,7 +497,7 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
 		stringstream ss;
 		ss << "Found a shorter route in TSPRouteOptimizer::moveSinglePoint()" << endl;
 		ss << "Moving point at " << actualSwitchIdx << " by " << actualSwitchShift << " positions." << endl;
-		ss << bestRoute->describe();
+		if (verbosity >= 2) ss << bestRoute->describe();
 		this->lastMessage = ss.str();
 		if (verbosity >= 1) cout << ss.str();
 
@@ -441,6 +508,31 @@ TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
 
     return bestRoute;
 }
+
+TSPRoute * TSPRouteOptimizer::untangleIntersection(TSPRoute * r) {
+	TSPSplitRoute * split = TSPRouteAnalyzer::findIntersections(r);
+
+	// do we even have intersections?
+	if (split == NULL) return NULL;
+
+	this->successCount ++;
+
+	// part B of the split routes has already been reversed
+	TSPRoute * retval = split->join();
+
+	stringstream ss;
+	ss << "Found a shorter route in TSPRouteOptimizer::untangleIntersection()" << endl;
+	ss << split->describe();
+	this->lastMessage = ss.str();
+	if (verbosity >= 1) cout << ss.str();
+
+    if (!retval->isComplete()) {
+        throw new runtime_error("TSPRouteOptimizer::untangleIntersection() produced an incomplete route!"); exit(1);
+    }
+
+	return retval;
+}
+
 
 
 void TSPRouteHistory::add(TSPRoute* r) {
