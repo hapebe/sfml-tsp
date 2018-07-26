@@ -44,14 +44,20 @@ void TSPPainter::updatePoints(vector<TSPPoint> data) {
         if (p->getY() < minY) minY = p->getY();
         if (p->getY() > maxY) maxY = p->getY();
     }
-    // allow 5% margins at min and max:
-    this->xSize = (maxX - minX) * 1.1;
-    this->x0 = minX - this->xSize * 0.05;
-    this->x1 = maxX + this->xSize * 0.05;
-    this->ySize = (maxY - minY) * 1.1;
-    this->y0 = minY - this->ySize * 0.05;
-    this->y1 = maxY + this->ySize * 0.05;
+    this->xSize = (maxX - minX);
+    this->ySize = (maxY - minY);
+    double maxSize = (this->xSize > this->ySize) ? this->xSize : this->ySize;
+    double cx = (minX + maxX) / 2.0; // x center
+    double cy = (minY + maxY) / 2.0; // y center
 
+    // allow 5% margins at min and max:
+    this->x0 = cx - maxSize * 0.55;
+    this->x1 = cx + maxSize * 0.55;
+    this->y0 = cy - maxSize * 0.55;
+    this->y1 = cy + maxSize * 0.55;
+
+    this->xSize = maxSize * 1.1;
+    this->ySize = maxSize * 1.1;
 
     dots.clear();
     dots.reserve(TSP_N);

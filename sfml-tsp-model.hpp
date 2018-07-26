@@ -90,7 +90,15 @@ class TSPRoute {
     public:
         TSPRoute() { this->length = -1; }
         TSPRoute * clone(void);
+    // get / evaluate:
         bool equals(TSPRoute * other);
+        int getIndexOf(int pointID);
+        int getStep(int idx) { return seq[(idx + getSize()) % getSize()]; }
+        size_t getSize(void) { return seq.size(); }
+        bool isComplete(void);
+        bool hasDuplicatePoints(void);
+        double getLength(void);
+    // modify:
         void addStep(int idx) {
         	seq.push_back(idx);
         	length = -1; // length has to be recalculated
@@ -99,14 +107,10 @@ class TSPRoute {
             seq[(idx + getSize()) % getSize()] = point;
             length = -1; // length has to be recalculated
         }
-        int getStep(int idx) { return seq[(idx + getSize()) % getSize()]; }
-        int getIndexOf(int pointID);
-        bool isComplete(void);
-        bool hasDuplicatePoints(void);
-        size_t getSize(void) { return seq.size(); }
-        double getLength(void);
+        void moveStepForward(int idx);
         void reverse(void);
         void reverseFromTo(int a, int b);
+    // output tools:
         string describe(void);
         string describePoints(void);
 };
@@ -119,6 +123,19 @@ TSPRoute * TSPRoute::clone(void) {
 
     return retval;
 }
+
+/**
+ * move the point at idx forward by exactly 1 position (wraps around, if applicable)
+ */
+void TSPRoute::moveStepForward(int idx) {
+	int ptA = this->getStep(idx);
+	int ptB = this->getStep(idx + 1);
+	this->setStep(idx, ptB);
+	this->setStep(idx + 1, ptA);
+
+    length = -1; // length has to be recalculated
+}
+
 
 void TSPRoute::reverse(void) {
 	// create a new vector containing the elements in reverse order:
@@ -377,14 +394,37 @@ class TSPRouteOptimizer {
     	string lastMessage;
 	public:
 		TSPRouteOptimizer() { successCount=0; verbosity=0; }
-        TSPRoute * switchAnyTwoPoints(TSPRoute * r);
+        TSPRoute * optimizeStep(TSPRoute * r);
+		TSPRoute * switchAnyTwoPoints(TSPRoute * r);
         TSPRoute * moveSinglePoint(TSPRoute * r);
+        TSPRoute * moveSinglePointOLD(TSPRoute * r); // the original implementation
         TSPRoute * untangleIntersection(TSPRoute * r);
         void setVerbosity(int v) { if (v>=0 && v<=2) this->verbosity=v; }
         int getSuccessCount(void) { return successCount; }
         string getLastMessage(void) { return lastMessage; }
         ~TSPRouteOptimizer() {}
 };
+
+TSPRoute * TSPRouteOptimizer::optimizeStep(TSPRoute * r) {
+	TSPRoute * candidate = NULL;
+
+    if (candidate == NULL) {
+		// try to simply switch two connected points:
+		candidate = optimizer->switchAnyTwoPoints(currentRoute);
+    }
+
+    if (candidate == NULL) {
+    	// try to eliminate an intersection:
+    	candidate = optimizer->untangleIntersection(currentRoute);
+    }
+
+    if (candidate == NULL) {
+    	// try to move any single point anywhere:
+    	candidate = optimizer->moveSinglePoint(currentRoute);
+    }
+
+    return candidate;
+}
 
 TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
     TSPRoute * r = original->clone();
@@ -442,6 +482,62 @@ TSPRoute * TSPRouteOptimizer::switchAnyTwoPoints(TSPRoute * original) {
 }
 
 TSPRoute * TSPRouteOptimizer::moveSinglePoint(TSPRoute * original) {
+    double benchmark = original->getLength();
+    size_t N = original->getSize();
+
+    double bestLength = benchmark;
+    int actualSwitchIdx = -1; // point at this index in the original route should be moved
+    int actualSwitchShift = -1; // ... by this many positions (forward)
+    TSPRoute * bestRoute = NULL;
+
+    if (verbosity >= 1) {
+		cout << "Current route: " << original->describe();
+		cout << "Trying to find a shorter route (<" << benchmark << ") by moving any single point anywhere:" << endl;
+    }
+
+    for (size_t i=0; i<N; i++) {
+        int idxA = original->getStep(i);
+        TSPRoute * r = original->clone();
+
+        if (verbosity >= 2) { cout << "  Considering point at #" << i << " which is p" << idxA << endl; }
+        for (size_t j=0; j < N-2; j++) {
+        	r->moveStepForward(i+j);
+        	if (verbosity >= 3) { cout << "Step: The route is now " << r->describePoints(); }
+
+			if (r->getLength() < bestLength) {
+				if (verbosity >= 1) { cout << "    Found a better route! (l=" << r->getLength() << ")" << endl; }
+				bestLength = r->getLength();
+
+				actualSwitchIdx = i;
+				actualSwitchShift = j+1;
+
+				if (bestRoute != NULL) delete bestRoute;
+				bestRoute = r->clone();
+			} else {
+				if (verbosity >= 2) { cout << "    ... not shorter: " << r->getLength() << endl; }
+			}
+        } // next shift amount
+		delete r;
+    } // next focus point
+
+    if (bestRoute != NULL) {
+    	this->successCount ++;
+		stringstream ss;
+		ss << "Found a shorter route in TSPRouteOptimizer::moveSinglePoint()" << endl;
+		ss << "Moving point at " << actualSwitchIdx << " by " << actualSwitchShift << " positions." << endl;
+		if (verbosity >= 2) ss << bestRoute->describe();
+		this->lastMessage = ss.str();
+		if (verbosity >= 1) cout << ss.str();
+
+        if (!bestRoute->isComplete()) {
+            throw new runtime_error("TSPRouteOptimizer::moveSinglePoint() produced an incomplete route!"); exit(1);
+        }
+    }
+
+    return bestRoute;
+}
+
+TSPRoute * TSPRouteOptimizer::moveSinglePointOLD(TSPRoute * original) {
     double benchmark = original->getLength();
     size_t N = original->getSize();
 

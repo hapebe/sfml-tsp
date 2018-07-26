@@ -15,7 +15,7 @@
 
 #define TSP_N 500 // Number of desired points in the TSP model
 #define SEED_POINTS 1
-#define SEED_ROUTE 1
+#define SEED_ROUTE 4
 
 #define FONT0 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
@@ -24,6 +24,16 @@
 #include "sfml-tsp-model.hpp"
 #include "sfml-tsp-analyses.hpp"
 #include "sfml-tsp-gfx.hpp"
+
+/*
+TODO:
+- starting route creation mode: inside out (spirals)
+- optimize moveSinglePoint() (possibly eliminate creation of new "test routes")
+- iterate many SEED_ROUTEs at once.
+- add a route comparison metric: how many sections are equal in two routes (also consider reverse direction!)
+DONE:
+- key trigger: optimize all at once. (<Shift> + o)
+*/
 
 
 void init(void) {
@@ -42,7 +52,6 @@ void init(void) {
     cout << routingTable->debug();
 
     srand(SEED_ROUTE); // use a fixed random seed, so the point configuration becomes predictable
-
     // setCurrentRoute(TSPRouter::naiveOrdered());
     // setCurrentRoute(TSPRouter::naiveClosest());
     setRandomRoute();
@@ -108,27 +117,23 @@ int main() {
                         setRandomRoute();
                     }
                     if (event.key.code == sf::Keyboard::O) { // optimize the current route:
-                    	TSPRoute * candidate = NULL;
+                    	bool complete =
+                    		sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)
+                    		|| sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+                    	if (complete) cout << "Optimizing until reaching local optimum..." << endl;
 
-                        if (candidate == NULL) {
-                        	// try to eliminate an intersection:
-                        	candidate = optimizer->untangleIntersection(currentRoute);
-                        }
+                    	TSPRoute * candidate;
+                    	do {
+							candidate = optimizer->optimizeStep(currentRoute);
 
-                        if (candidate == NULL) {
-							// try to simply switch two connected points:
-							candidate = optimizer->switchAnyTwoPoints(currentRoute);
-                        }
+							if (candidate != NULL) {
+								cout << optimizer->getLastMessage() << endl;
+								setCurrentRoute(candidate);
+							}
 
-                        if (candidate == NULL) {
-                        	// try to move any single point anywhere:
-                        	candidate = optimizer->moveSinglePoint(currentRoute);
-                        }
-
-                        if (candidate != NULL) {
-                        	cout << optimizer->getLastMessage() << endl;
-                        	setCurrentRoute(candidate);
-                        }
+							// only loop if Shift was pressed at call time:
+							if (!complete) break;
+                    	} while (candidate != NULL);
                     }
                     if (event.key.code == sf::Keyboard::B) {
                         // one step back in the route history:
