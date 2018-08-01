@@ -13,9 +13,9 @@
 #include <SFML/Graphics.hpp>
 #include <stdio.h> // for sprintf()
 
-#define TSP_N 500 // Number of desired points in the TSP model
-#define SEED_POINTS 1
-#define SEED_ROUTE 4
+#define TSP_N 20 // Number of desired points in the TSP model
+#define SEED_POINTS 4
+#define SEED_ROUTE 1
 
 #define FONT0 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
@@ -28,11 +28,13 @@
 /*
 TODO:
 - starting route creation mode: inside out (spirals)
-- optimize moveSinglePoint() (possibly eliminate creation of new "test routes")
+- starting route creation mode: add points one by one (each: where it causes the least increase in route length)
+  - needs: route->insertAt() (and maybe: route->removeAt())
 - iterate many SEED_ROUTEs at once.
 - add a route comparison metric: how many sections are equal in two routes (also consider reverse direction!)
 DONE:
 - key trigger: optimize all at once. (<Shift> + o)
+- optimize moveSinglePoint() (possibly eliminate creation of new "test routes")
 */
 
 
